@@ -1,0 +1,1 @@
+{"Pascale": 28, "Jean": 23, "Aziz": 23, "Fred": 7, "Marcus": 0, "Azia": 0, "khanez": 8, "Jahid": 7}
