@@ -1,0 +1,375 @@
+# ON TRAITE LA DONNEE
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+
+# Importation du fichier test
+data = pd.read_csv("S:/Donnee/test.csv", sep=";")
+h=data["url"]
+
+i=0
+j=[]
+k=[]
+tup=h[i].split(":")
+
+# traitement de la donné URL en trois variables
+#, on separe l adresse IP du serveur des autre info de l'url
+for i in range(len(h)) :
+    tup=h[i].split(":")
+    j=j+[tup[0]] # on cree une liste j avec toules les valeurs IP 
+    k=k+[tup[1]] #  on cree une liste k avec toutes les autre valeur
+
+# ensuite nous separon le num de port de l'url des chemin d'acces que nous
+# mettons respectivement sur o et e
+o=[]
+e=[]
+for i in range(len(k)) :
+    bing=k[i]
+    o=o+[bing[0:3]]
+    e=e+[bing[3:]]
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+###############    Etude des Occurence des port   ########################################""
+
+# nous creons un dictionnaire afin de repertorier les differents les port (variable o) que nous avons
+# anisi que leur nombre d'aparition
+
+compteO={}.fromkeys(set(o),0)
+for valeur in o :
+ compteO[valeur] +=1
+# on met ensuite les ports dans la variable CleeO et le nombre de fois qu apparait cette
+# ce port respective dans la variable valO
+CleeO=[]
+valO=[]
+for cle, valeur in compteO.items():
+     CleeO=CleeO+[cle]
+     valO=valO+[valeur]
+    
+     
+    
+
+# puis on affiche en diagrame en bar
+plt.bar(CleeO, valO)
+
+# la grande majorité est du port 443 mais nus avons egualement du port 80
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+
+    
+    
+    
+###############    Etude des Occurence des IP   ########################################""
+
+# nous creons un dictionnaire afin de repertorier les differents adresse IP que nous avons
+# anisi que leur nombre d'aparition
+compte={}.fromkeys(set(j),0)
+for valeur in j :
+ compte[valeur] +=1
+
+# on met ensuite les adresse ip dans la variable Clee et le nombre de fois qu apparait cette
+# adresse ip respective dans la variable val
+Clee=[]
+val=[]
+for cle, valeur in compte.items():
+     Clee=Clee+[cle]
+     val=val+[valeur]
+    
+     
+    
+print(val)
+
+# puis on affiche diagrame en bar
+plt.bar(Clee, val)
+
+
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+###############    Etude des Occurence des chemins   ########################################  
+
+# nous creons un dictionnaire afin de repertorier les differents chemins (variable e) que nous
+# avons anisi que leur nombre d'aparition
+
+compteE={}.fromkeys(set(e),0)
+for valeur in e :
+ compteE[valeur] +=1
+
+
+# on met ensuite les ports dans la variable CleeO et le nombre de fois qu apparait cette
+# ce port respective dans la variable valO
+CleeE=[]
+valE=[]
+for cle, valeur in compteE.items():
+     CleeE=CleeE+[cle]
+     valE=valE+[valeur]   
+   
+     
+
+# puis on affiche diagrame en bar
+#plt.bar(CleeE, valE)
+
+# la grande majorité est du port 443 mais nus avons egualement du port 80
+# on a 508 chemin different c'est beaucoup et sa demande du temps pour la compilation 
+
+
+
+
+
+
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+
+
+
+
+############################  c'est ici qu on reforme notre base de données   #################################
+############################            avec plusieur variable d'url          #####################################
+# notre URL se compse de j o e
+Ip=pd.DataFrame(j, columns=["IpServeur"])
+Port=pd.DataFrame(o, columns=["PortServeur"])
+Chemin=pd.DataFrame(e, columns=["CheminServeur"])
+
+dataN=data.iloc[:,0:9]
+dataN['IpServeur']=Ip
+dataN['PortServeur']=Port
+dataN['CheminServeur']=Chemin
+dataN
+
+#dataN.to_csv('dataN.csv') #  exporter la table
+#NBdata.to_csv('NBdata.csv')
+
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+
+
+##################################################################################################################################################
+##################################################################################################################################################
+##################################################################################################################################################
+###########################             CONSTRUCTION DU TABLEAU DISJONCTIF BINAIRE      #################################################################################
+##################################################################################################################################################
+##################################################################################################################################################
+##################################################################################################################################################
+
+
+import DisjonctifTab
+
+# Variable action 
+BdataAction=DisjonctifTab.Tab(dataN['action'])
+#BdataAction.iloc[2200] # voir la 2200 éme ligne
+#BdataAction.iloc[2200][0] # voir la 2200 éme ligne et la premiere colones
+BdataAction=BdataAction.rename(index=float, columns={np.nan:"NaN_Action"}) # on renome la variabme nan en NaN pour eviter d'avoir des problemes
+
+
+
+# Variable attack_type
+BdataAttack_type=DisjonctifTab.Tab(dataN['attack_type'])
+BdataAttack_type=BdataAttack_type.rename(index=float, columns={np.nan:"NaN_Attack_type"})
+
+
+
+# Variable category
+BdataCategory=DisjonctifTab.Tab(dataN['category']) ## One ne mettra pas cette données, elle est redondante avec
+                                                   ## la variable attack_type
+    
+# Variable dest et dest_ip sont les meme, on garde uniquement dest_ip
+
+BdataDest_ip=DisjonctifTab.Tab(dataN['dest_ip'])
+
+# Variable id
+BdataID=DisjonctifTab.Tab(dataN['id'])
+BdataID=BdataID.rename(index=float, columns={np.nan:"NaN_ID"})
+
+
+# Variable ip_client
+BdataiIp_client=DisjonctifTab.Tab(dataN['ip_client'])
+
+
+# Variable IpServeur
+BdataiIpServeurt=DisjonctifTab.Tab(dataN['IpServeur'])
+
+# Variable PortServeur
+BdataiPortServeur=DisjonctifTab.Tab(dataN['PortServeur'])
+
+# Variable CheminServeur
+BdataiCheminServeur=DisjonctifTab.Tab(dataN['CheminServeur'])
+
+
+Bdata=pd.concat([BdataAction, BdataAttack_type,BdataDest_ip, BdataID , BdataiIp_client,BdataiIpServeurt,BdataiPortServeur ,BdataiCheminServeur , BdataiPortServeur ,BdataiCheminServeur ], axis=1, sort=False)
+
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+# On est dans la parit normalisation
+# On normalise pour etre dans l'espace des probabilité (la somme de chaque ligne doit etre égale à 1)
+NBdata=Bdata.divide(Bdata.sum(axis=1)[0])
+#NBdata.sum(axis=1)[0] # la preuve de la somme de chaque ligne, (axis = 0) somme des colones
+# on moyenne chaque colones de NBdata
+ProfilMoyen=NBdata.sum(axis=0)/(len(NBdata))
+#ProfilMoyen 
+################  Tableau de Distance de Chi2
+# Data=CHI2Tab.ChiT(NBdata,ProfilMoyen) fonction qui retourne un tableau de distance Chi2
+# np.savetxt('ChiTab1',Data) on enregistre la tab de distance car ca prend trop de temps 
+Data=np.loadtxt('ChiTab1')
+Chi2Tab=pd.DataFrame(Data)
+
+""" 
+#   A part exemple de recherche d'indice du max de la dataframe
+tab=np.array([[4,56,104,1024],[41,25,1,3690000],[50248,45,74,24],[5,0,457,4]])
+Tab=pd.DataFrame(tab)
+A=Tab.max(axis=0) # max Colone
+B=Tab.max(axis=1) # Max ligne
+A.idxmax() # indice colone du max
+B.idxmax() # indice colone du max
+Tab.iloc[B.idxmax()][A.idxmax()]# on retrouve exactement la valeurs maximum
+
+    EXEMPLE DE PK LE MAX NE MARCHE PAS SUR UN TAB DE DISTANCE
+    
+tab=np.array([[0,56,104,1024],[56,0,1,3690000],[104,1,0,24],[1024,3690000,24,0]])
+Tab=pd.DataFrame(tab)
+A=Tab.max(axis=0) # max Colone
+B=Tab.max(axis=1) # Max ligne
+A.idxmax() # indice colone du max
+B.idxmax() # indice colone du max
+Tab.iloc[B.idxmax()][A.idxmax()]# on retrouve exactement la valeurs maximum
+"""
+
+## Creation de la matrice inf à 0 pour trouver le max
+import DataFrameInfZeros
+
+InfChi2Tab=DataFrameInfZeros.Mat_Inf_Zeros(Chi2Tab)
+
+""" 
+A=InfChi2Tab.max(axis=0) # max Colone
+B=InfChi2Tab.max(axis=1) # Max ligne
+Ia=A.idxmax() # indice colone du max
+Ib=B.idxmax() # indice colone du max
+InfChi2Tab.iloc[Ib][Ia]# on retrouve exactement la valeurs maximum
+Chi2Tab.iloc[Ib][Ia]
+"""
+
+
+""" 
+############ Data Visualisation)
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA
+pca = PCA(n_components=4) # tu rentre le nb de composante principaux que tu veux
+pca.fit(NBdata) # tu lances l'acp
+ValProre=pca.explained_variance_ratio_ # valeurs propre, cad inertie principaux en %
+VectPropre=pca.components_ # matrice de passage, cad vecteur propre, cad la projection des individu s
+                           # sur les axes principaux
+# on affiche en 3d les 3 comosante principaux, on a peu prés 51 % d'information sur ces 3 axes
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(VectPropre[0,:],VectPropre[1,:],VectPropre[2,:])
+plt.show()
+"""
+
+#del Chi2Tab
+#InfChi2Tab
+Data=np.loadtxt('ChiTab1')
+Chi2Tab=pd.DataFrame(Data)
+#InfChi2Tab
+
+""" 
+import Kmeans
+# [149, 209]
+Ncentre = Kmeans.Initial(Chi2Tab,InfChi2Tab, 3)
+
+import KImeans
+[Tabcentre,Groupe, Ncentre1]=KImeans.KIMEANS(NBdata,ProfilMoyen,Chi2Tab,InfChi2Tab,4,100)
+"""
+
+""" 
+import GlobalKmeans
+
+G=GlobalKmeans.GlobalKIMEANS(NBdata,ProfilMoyen,Chi2Tab,InfChi2Tab, 3)
+
+###############################        Partie NLP           ###############################################
+import nltk # installation de NLTK
+#nltk.download()
+from nltk.corpus import stopwords
+"""
+
+
+
+
+
+################  DANs une nouvelle case
+
+import pandas as pd
+import numpy as np
+import sklearn.metrics as sm
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+
+#NBdata
+#ProfilMoyen
+#Cluster K-means
+model=KMeans(n_clusters=5)
+#adapter le modèle de données
+model.fit(NBdata)
+
+
+
+
+################  DANs une nouvelle case
+
+
+Class=model.labels_
+ClassO=pd.DataFrame(Class)
+#print(ClassO)
+
+Centre=model.cluster_centers_
+CentreO=pd.DataFrame(Centre)
+#print(CentreO)
+
+
+
+################  DANs une nouvelle case
+
+
+Groupe1=[]
+Groupe2=[]
+Groupe3=[]
+Groupe4=[]
+Groupe5=[]
+
+for i in range(0,len(ClassO),1):
+    
+    if ClassO[0][i] == 0 :
+        Groupe1=Groupe1+[i]
+    elif ClassO[0][i] == 1 :
+        Groupe2=Groupe2+[i]
+    elif ClassO[0][i] == 2 :
+        Groupe3=Groupe3+[i]
+    elif ClassO[0][i] == 3 :
+        Groupe4=Groupe4+[i]
+    elif ClassO[0][i] == 4 :
+        Groupe5=Groupe5+[i]        
