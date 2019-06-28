@@ -1,0 +1,271 @@
+import os
+import numpy as np
+import pandas as pd
+
+# Mettre ici le chemin menant au ficier  bigip.txt
+#############################################################
+fichier=open(r'C:\Users\haykal_f\Desktop\bigip.txt')#
+#############################################################
+
+
+
+
+
+lines = fichier.read()
+Vslist = lines.split("ltm virtual /")
+Vslist=Vslist[1:len(Vslist)]
+
+u=Vslist[len(Vslist)-1].split("ltm virtual-address")
+Vslist[len(Vslist)-1]=u[0]
+Data1=pd.DataFrame(Vslist)
+Data2=pd.DataFrame(Vslist)
+
+#################################    On repertories les Noms de Vs    #################################
+
+
+
+NomVs=[]
+PartitionVs=[]
+for i in range(0,len(Data1),1):
+             NomVs=NomVs+[Data1.iloc[i][0].split("{")[0].split("/")[len(Data1.iloc[i][0].split("{")[0].split("/"))-1].replace('\n','').replace(" ","")]
+             PartitionVs=PartitionVs+[Data1.iloc[i][0].split("{")[0].split("/")[0].replace('\n','')]
+
+#################################    On repertorie les Members   ################################################
+
+ltmPool = lines.split("ltm pool")
+ltmPool=ltmPool[1:len(ltmPool)]
+ltmPool[len(ltmPool)-1]=ltmPool[len(ltmPool)-1].split("ltm virtual")[0]
+Pmembers={}
+
+import re
+
+for i in range(0, len(ltmPool), 1):
+        if re.findall(r"\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}.%\d{1,2}:\d{1,4}",ltmPool[i].replace("\n","").replace('\n',''))  != []:
+             Pmembers[ltmPool[i].split('{')[0].split("/")[len(ltmPool[i].split('{')[0].split("/"))-1]]=re.findall(r"\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}.%\d{1,2}:\d{1,4}",ltmPool[i].replace("\n","").replace('\n',''))
+
+        elif re.findall(r"\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}.%\d{1,2}:\d{1,4}",ltmPool[i].replace("\n","").replace('\n',''))  == []:
+                   Pmembers[ltmPool[i].split('{')[0].split("/")[len(ltmPool[i].split('{')[0].split("/"))-1]]=re.findall(r"[A-Za-z0-9.%]{0,100}:\d{1,4}",ltmPool[i]) 
+
+        else :
+             Pmembers[ltmPool[i].split('{')[0].split("/")[len(ltmPool[i].split('{')[0].split("/"))-1]]=re.findall(r"\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}:\d{1,4}",ltmPool[i].replace("\n","").replace('\n',''))
+        
+NNvs = []                     
+for i in range(0,len(NomVs),1):
+           if NomVs[i].find("vs") != -1:
+                   NNvs=NNvs+[NomVs[i].split("vs")[0].replace(" ","")]
+           elif  NomVs[i].find("VS") != -1:
+                   NNvs=NNvs+[NomVs[i].split("VS")[0].replace(" ","")]
+           else :
+                   NNvs=NNvs+[NomVs[i].replace(" ","")]
+
+
+Nomp=[]
+for i in range(0,len(Data1),1):
+            
+            try:
+                        u=re.findall(r"pool.{0,1000}.\n",Data1.iloc[i][0])[0].split("/")[len(re.findall(r"pool.{0,1000}.\n",Data1.iloc[i][0])[0].split("/"))-1]
+                        if re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}.%\d{1,2}",u) == []:
+                                      Nomp=Nomp+[u.replace("\n"," ")]
+                        else :
+                                      Nomp=Nomp+["None"] 
+                                
+            except IndexError:
+                      Nomp=Nomp+["None"]                   
+                    
+                                 
+pool=[]
+for i in range(0,len(Nomp),1):
+            try:
+                   pool=pool+[Pmembers[Nomp[i]]]
+            
+            except KeyError:
+                   pool=pool+["None"] 
+                    
+                          
+      
+    
+
+
+#################################  Profile Client #################################
+ltmc = lines.split("ltm profile client")
+ltmClient=ltmc[1:len(ltmc)-1]
+#Pmembers={}
+client_ssl=[]
+Nclient_ssl=[]
+NNclient_ssl=[]
+for i in range(0,len(ltmClient),1):
+       client_ssl=client_ssl+[ltmClient[i].split("{")[0].split("/")[len(ltmClient[i].split("{")[0].split("/"))-1]]
+       Nclient_ssl=Nclient_ssl+[client_ssl[i].split("_")[len(client_ssl[i].split("_"))-1]]
+       NNclient_ssl=NNclient_ssl+[client_ssl[i].split(Nclient_ssl[i])[0]]
+        
+
+ProfileClient=[]
+for value in NNvs:
+    try:
+              j=NNclient_ssl.index(value)
+              ProfileClient=ProfileClient+[client_ssl[j]]
+    except ValueError:
+              ProfileClient=ProfileClient+["None"]
+
+
+
+            
+#################################    Profile serveur   #################################
+ltms = lines.split("ltm profile server")
+ltmServeur=ltms[1:len(ltms)-1]
+#Pmembers={}
+Serveur_ssl=[]
+Nserveur_ssl=[]
+NNserveur_ssl=[]
+for i in range(0,len(ltmServeur),1):
+       Serveur_ssl=Serveur_ssl+[ltmServeur[i].split("{")[0].split("/")[len(ltmServeur[i].split("{")[0].split("/"))-1]]
+       Nserveur_ssl=Nserveur_ssl+[Serveur_ssl[i].split("_")[len(Serveur_ssl[i].split("_"))-1]]
+       NNserveur_ssl=NNserveur_ssl+[Serveur_ssl[i].split(Nserveur_ssl[i])[0]]
+        
+
+ProfileServeur=[]
+for value in NNvs:
+    try:
+              j=NNserveur_ssl.index(value)
+              ProfileServeur=ProfileServeur+[Serveur_ssl[j]]
+    except ValueError:
+              ProfileServeur=ProfileServeur+["None"]
+
+               
+#################################     protocole et type   ##################################################################
+protocole=[]
+PHTTP=[]
+PType=[]
+for i in range(0, len(Data2),1):
+        vect=[]
+        ProfileHTTP=[]
+        Type=[]
+        protocole=protocole+[Data2.iloc[i][0].replace("\n","").split("profiles")[1].split("source")[0]]
+        vect=protocole[i].replace("\n","").replace("    ","").split(" ")
+        for j in range(0,len(vect),1):
+            if vect[j].find("HTTPs")!= -1 or vect[j].find("http")!= -1 :
+                     ProfileHTTP=ProfileHTTP+[vect[j]]
+            else :
+                     ProfileHTTP=ProfileHTTP+[" "]
+            
+            if vect[j].find("tcp") != -1 or vect[j].find("fastl4") != -1 or vect[j].find("fastL4") :
+                      Type=Type+[vect[j]]
+            else :
+                      Type=Type+[" "]
+        PHTTP=PHTTP+["  ".join(ProfileHTTP).replace("{","").replace("}","")]
+        PType=PType+["  ".join(Type).replace("{","").replace("}","")]
+        if PType[i].find("tcp")!= -1:
+              PType[i]="Standard"
+        elif PType[i].find("fastL4")!= -1:
+              PType[i]="FastL4"
+                
+        else :
+              PType[i]=[""]
+                
+                
+# Profile http
+ltmh = lines.split("ltm profile http")
+ltmhttp=ltmh[1:len(ltmh)-1]
+#Pmembers={}
+profile_http=[]
+Nprofile_http=[]
+NNprofile_http=[]
+for i in range(0,len(ltmhttp),1):
+       profile_http=profile_http+[ltmhttp[i].split("{")[0].split("/")[len(ltmhttp[i].split("{")[0].split("/"))-1]]
+       Nprofile_http=Nprofile_http+[profile_http[i].split("_")[len(profile_http[i].split("_"))-1]]
+       NNprofile_http=NNprofile_http+[profile_http[i].split(Nprofile_http[i])[0]]
+        
+
+Profilehttp=[]
+
+
+for i in range(0,(len(Data1)),1):
+     j=2
+     for value in profile_http :
+            if Data1.iloc[i][0].find(value) !=-1:
+                Profilehttp=Profilehttp+[value]
+                j=0
+                break
+            else :
+                j=j
+     if j==2:
+         Profilehttp=Profilehttp+["None"]
+    
+             
+
+# Profile tcp
+ltmt = lines.split("ltm profile tcp")
+ltmtcp=ltmt[1:len(ltmt)-1]
+#Pmembers={}
+profile_tcp=[]
+Nprofile_tcp=[]
+NNprofile_tcp=[]
+for i in range(0,len(ltmtcp),1):
+       profile_tcp=profile_tcp+[ltmtcp[i].split("{")[0].split("/")[len(ltmtcp[i].split("{")[0].split("/"))-1]]
+       Nprofile_tcp=Nprofile_tcp+[profile_tcp[i].split("_")[len(profile_tcp[i].split("_"))-1]]
+       NNprofile_tcp=NNprofile_tcp+[profile_tcp[i].split(Nprofile_tcp[i])[0]]
+        
+
+Profiletcp=[]
+
+
+for i in range(0,(len(Data1)),1):
+     j=2
+     for value in profile_tcp :
+            if Data1.iloc[i][0].find(value) !=-1:
+                Profiletcp=Profiletcp+[value]
+                j=0
+                break
+            else :
+                j=j
+     if j==2:
+         Profiletcp=Profiletcp+["None"]
+    
+             
+                  
+                     
+#################################     ASM WAF     ################################# 
+
+PolicyAsm=[]
+for i in range(0,len(Data1),1):
+            J=Data1.iloc[i][0].split("profiles {")[1].split(" }")[0]
+            if J.find("ASM") != -1 :
+                   PolicyAsm=PolicyAsm+[J.split("ASM")[1].split("{}")[0]]
+            else:
+                   
+                   PolicyAsm=PolicyAsm+["None"]
+            
+Data1.iloc[0][0].split("destination")[1].split("ip-protocol")[0].split("/")[2].replace("\n","")
+destinationIp=[]
+routeDomaine=[]
+
+#################################    Port     ################################# 
+Port=[]
+for i in range(0,len(Data1),1):
+    u=Data1.iloc[i][0].split("destination")[1].split("ip-protocol")[0].split("/")[2].replace("\n","")
+    Port=Port+[re.findall(r":\d{1,4}",u)]
+    if u.find("%") != -1:
+        routeDomaine=routeDomaine+[u.split("%")[1].split(":")[0]]
+        destinationIp=destinationIp+[u.split("%")[0]]
+    else:
+        routeDomaine=routeDomaine+[""]
+        destinationIp=destinationIp+[u.split(":")[0]]
+
+#################################    Irules ################################# 
+Irules=[]
+for i in range(0,len(Data1),1):
+    if Data1.iloc[i][0].find("rules")!= -1:
+          Irules=Irules+[Data1.iloc[i][0].split("rules")[1].split("/")[2].split("\n")[0]]
+    else :
+          Irules=Irules+[""]
+
+
+#################################    
+On={'Nom de Vs' : NomVs,'Partition VS':PartitionVs,'IP VIP':destinationIp,'Port':Port,'Route Domaine':routeDomaine, 'Pool Name':Nomp, 'Pool Members':pool, 'Profile SSL Server':ProfileServeur,'Profile SSL Client':ProfileClient,"HTTP Profile":Profilehttp,"TCP Profile":Profiletcp ,"Type":PType,"Irules":Irules ,'Politiques ASM':PolicyAsm}
+Tdata=pd.DataFrame(On)
+
+# Mettre ici le chemin afin de recuperer le recultat en fichier csv
+###############################################################################
+Tdata.to_csv(r'C:\Users\haykal_f\Desktop\Essai\LCL-ZAC-SERVICES.csv', sep=',')#
+###############################################################################
+
