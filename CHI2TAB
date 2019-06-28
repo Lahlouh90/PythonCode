@@ -1,0 +1,21 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import DistChi2
+
+"""
+ fonction qui retourne tableau de distace de chi2 dans une data frame
+ 
+"""
+
+def ChiT(tab, pm):
+    Zero=np.zeros(shape=(len(tab),len(tab)))
+    Data=pd.DataFrame(Zero)
+    for i in range(0, len(tab),1):
+        for j in range(0, len(tab),1):
+            Data.iloc[i][j]=DistChi2.dist(tab.iloc[i],tab.iloc[j],pm)
+    return Data
+      
+    
+    
+    
